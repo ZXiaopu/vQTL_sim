@@ -4,7 +4,7 @@ library(janitor)
 library(car) # Levene's test, Brown-Forysthe test
 library(stats) # Bartlett's test, FK test
 library(dglm) # dglm
-library(quantreg) # QUAIL
+library(quantreg)
 
 args <- commandArgs(trailingOnly = TRUE)
 N <- as.numeric(args[1])
@@ -17,6 +17,7 @@ a_env <- as.numeric(args[7])
 a_error <- as.numeric(args[8])
 Dist <- args[9]
 Exposure <- args[10] ## binary/uniform/normal
+count <- args[11]
 
 GenerateVariable <- function(N, MAF, freq_env, env1){
   ## minor homogeneity group contains 5 samples
@@ -129,7 +130,6 @@ IndQTLmapping <- function(indData, type){
     TSSR.P <- NA
     TSSR.effect <- NA
   }
-  
   CLS.P <- cor.test((indData$resid.CLS)^2, as.numeric(indData$genotype), method="spearman")$p.value
   SVLM.P <- summary(lm((resid.SVLM^2) ~ as.numeric(genotype), data = indData))$coef[2,4]
   SVLM.effect <- summary(lm((resid.SVLM^2) ~ as.numeric(genotype), data = indData))$coef[2,1]
@@ -148,6 +148,7 @@ RunSimulation <- function(N, MAF, freq_env, env1, g_mean, g_var, a_env, a_error,
   indData <- GenerateData(N, MAF, freq_env, env1, g_mean, g_var, a_env, a_error, Dist)
   
   ## unadjusted value
+  # indData$resi <- residuals(lm(Trait ~ BMI + Age + Sex + Smoking, data = indData))
   indData$resi <- residuals(lm(Trait ~ Env, data = indData))
   output.raw <- IndQTLmapping(indData, type="raw")
   rownames(output.raw) <- c("unadjusted_p","unadjusted_effect")
@@ -166,11 +167,10 @@ RunSimulation <- function(N, MAF, freq_env, env1, g_mean, g_var, a_env, a_error,
            Env_mean = mean(indData$E/indData$Trait, na.rm=T), Env_sd = sd(indData$E/indData$Trait, na.rm=T),
            error_mean = mean(indData$error/indData$Trait, na.rm=T), error_sd = sd(indData$error/indData$Trait, na.rm=T))
   
-  write.table(Indresult, paste0("SimRes.ideal.Sample",N,".MAF",MAF,".mean",g_mean,".var", g_var, ".", Dist, 
-                                "fenv.", freq_env, ".E", Exposure), col.names=F ,row.names=T, sep="\t", quote=F, append=T)
+  write.table(Indresult, paste0("/scratch/.../Xiaopu/SimRes.ideal.Sample",N,".MAF",MAF,".mean",g_mean,".var", g_var, ".", Dist, 
+                                "fenv.", freq_env, ".E", Exposure, ".count",count), col.names=F ,row.names=T, sep="\t", quote=F, append=T)
 }
 
 for (i in c(1:1000)){
   RunSimulation(N, MAF, freq_env, env1, g_mean, g_var, a_env, a_error, Dist)
 }
-
